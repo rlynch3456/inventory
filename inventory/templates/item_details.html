@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+    {% block title %}
+        Inventory
+    {% endblock %}
+
+    {% block main %}
+
+    {% if itemID == 0 %}
+    <form id="itemForm" class="row g-3" method="POST">
+{% else %}
+    <form id="deleteForm" class="row g-3" method="POST" action="/delete_confirm/{{ itemID }}">
+        <div class="col-12 text-end">
+            <svg id="deleteIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16" onclick="submitForm()" style="cursor: pointer;">
+                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+
+            </svg>
+        </div>
+    </form>
+    <script>
+        function submitForm() {
+            document.getElementById("deleteForm").submit();
+        }
+    </script>
+{% endif %}
+<form id="imagesForm" class="row g-3" method="POST" action="/images/{{itemID}}">
+    <div class="col-md-auto pb-3">
+                
+        {% if images|length != 0 %}
+            <img src = "{{ url_for('static', filename='images/' + images[0]['ThumbnailName']) }}" onclick="submitImagesForm()" style="cursor: pointer;">
+        {% elif itemID != 0 %}
+            <img src = "static/image_icon.png" width="200" onclick="submitImagesForm()" style="cursor: pointer;">
+        {% endif %}
+    
+    <script>
+        function submitImagesForm() {
+            document.getElementById("imagesForm").submit();
+        }
+    </script>
+</div>    
+</form>
+    {% if itemID == 0 %}
+        <form id="itemForm" class="row g-3" method="POST" action="/add_item">
+    {% else %}
+        <form id="itemForm" class="row g-3" method="POST" action="/update_item">
+    {% endif %}
+        <div class="row mt-3">
+
+            <div class="col-md-auto pb-3">
+                <label for="ItemID" class="form-label">ItemID: {{ itemID }}</label>
+                {% if itemID == 0 %}
+                    <input type="text" class="form-control" name="itemID" id="ItemID" disabled>
+                {% else %}
+                    <input type="text" class="form-control" name="itemID" id="ItemID" value="{{ itemID }}" disabled >
+                    <input type="hidden" name="ItemIDHidden" value="{{ itemID }}">
+                {% endif %}
+            </div>
+        </div>
+
+            <div class="col-md-6">
+                <label for="description" class="form-label">Description</label>
+                <input type="text" class="form-control" required id="description" name="description" {% if itemID != 0 %} value="{{ item['Description'] }}"{% endif %}>
+            </div>
+            <div class="col-md-6">
+                <label for="notes" class="form-label">Notes</label>
+                <input type="text" class="form-control" id="notes" name="notes" {% if itemID == 0 %}value="" {% else %} value="{{ item['Notes'] }}"{% endif %}>
+            </div>
+    
+            <div class="col-md-4">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" class="form-select" required>
+                    <option>Choose...</option>
+                    {% for category in categories %}
+                        <option value="{{ category[0] }}" {% if category[0] == categoryID %}selected{% endif %}>{{ category[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="col-md-4">
+                <label for="location" class="form-label">Location</label>
+                <select id="location" name="location" class="form-select">
+                    <option>Choose...</option>
+                    {% for location in locations %}
+                        <option value="{{ location[0] }}" {% if location[0] == locationID %}selected{% endif %}>{{ location[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="col-md-4">
+                <label for="brand" class="form-label">Brand</label>
+                <select id="brand" name="brand" class="form-select">
+                    <option>Choose...</option>
+                    {% for brand in brands %}
+                        <option value="{{ brand[0] }}" {% if brand[0] == brandID %}selected{% endif %}>{{ brand[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                    <label for="notes" class="form-label">Serial Number</label>
+                    <input type="text" class="form-control" id="serialnumber" name="serialNumber" {% if itemID == 0 %}value="" {% else %} value="{{ item['SerialNumber'] }}"{% endif %}>
+            </div>
+            <div class="col-md-4">
+                    <label for="accessories" class="form-label">Accessories</label>
+                    <input type="text" class="form-control" id="accessories" name="accessories" {% if itemID == 0 %}value="" {% else %} value="{{ item['Accessories'] }}"{% endif %}>
+            </div>
+            <div class="col-md-4">
+                <label for="purchase_date"class="form-label">Purchase Date:</label></br>
+                <input type="date" class="form-control" id="purchase_date" name="purchase_date" value="{{ item['PurchaseDate'] }}">
+            </div>
+
+            <div class="col-md-4">
+                <label for="value" class="form-label">Value</label>
+                <input type="text" class="form-control" id="worth" name="worth" {% if itemID == 0 %}value="" {% else %} value="{{ item['Value'] }}"{% endif %}>
+            </div>
+
+            <div class="col-md-4">
+                <label for="warranty" class="form-label">Warranty</label>
+                <input type="text" class="form-control" id="warranty" name="warranty" {% if itemID == 0 %}value="" {% else %} value="{{ item['Warranty'] }}"{% endif %}>
+            </div>
+
+            <div class="row justify-content-center mt-3">
+                <div class="col-auto">
+                    {% if itemID == 0 %}
+                        <button type="submit" class="btn btn-primary" id="submitButton" >Add</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
+                    {% endif %}
+                </div>
+            </div>
+
+        </form>
+
+
+
+
+
+
+
+        <script>
+            // This chunk of code will enable the submit button if anything in the for changed
+            $(document).ready(function() {
+                // Store the initial form values
+                var initialFormValues = $('#itemForm').serialize();
+        
+                // Check for changes on form input
+                $('#itemForm :input').on('input', function() {
+                    // Enable the submit button if the form values have changed
+                    var currentFormValues = $('#itemForm').serialize();
+                    if (currentFormValues !== initialFormValues) {
+                        $('#submitButton').prop('disabled', false);
+                    } else {
+                        $('#submitButton').prop('disabled', true);
+                    }
+                    console.log("Input Changed");
+                });
+        
+                // Add a value for the disabled button to the initial form values
+                initialFormValues += '&submitButton=on';
+            });
+        </script>
+
+        <script>
+            // Get the cancel button element
+            var cancelButton = document.getElementById('cancelButton');
+
+            // Add a click event listener to the cancel button
+            cancelButton.addEventListener('click', function() {
+                // Reload the page when the cancel button is clicked
+                location.reload();
+            });
+        </script>
+    
+    {% endblock %}

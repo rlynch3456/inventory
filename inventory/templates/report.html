@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+    {% block title %}
+        Inventory
+    {% endblock %}
+
+    {% block main %}
+        <table class="table text-start" style="width:50%; margin-left:auto; margin-right:auto">
+            {% for entry in data %}
+            
+                <tr><th colspan="5">{{ entry.group }}</th></tr>
+                {% for item in entry.itemlist %}
+                    <tr>
+                        <td>{{ item['Description'] }}</td>
+                        {% if groupd != 'location' %}<td>{{ item['Location'] }}</td>{% endif %}
+                        {% if group != 'category' %}<td>{{ item['Category'] }}</td>{% endif %}
+                        {% if group != 'brand' %}<td>{{ item['Brand'] }}</td>{% endif %}
+                        {% if item['Value'] != None %}
+                            <td>${{ item['Value']}}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        <!-- Add more lines for other keys you want to display -->
+                    </tr>
+
+                {% endfor %}
+            {% endfor %}  
+        </table>
+    {% endblock %}

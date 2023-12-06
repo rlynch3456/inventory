@@ -1,0 +1,30 @@
+
+{% extends "layout.html" %}
+    {% block title%}
+        Home
+    {% endblock %}
+
+  {% block main %}
+<h3>{{ description }}</h3>
+<h4>Image Upload</h4>
+<form id="upload-form" enctype="multipart/form-data" action="/upload" method="post" >
+    <input type="hidden" name="itemID" value = "{{itemID}}"></input>
+    <input type="file" name="file" id="file-input" accept=".jpg, .jpeg, .png, .gif" class="btn btn-primary">
+    <input type="submit" value="Upload" id="upload-button" class="btn btn-primary">
+</form>
+<hr>
+  <form action="/image_delete" method="POST">
+    <table style="width:50%; margin-left:auto; margin-right:auto">
+    
+        {% for image in images %}
+        <tr>
+            <td>
+                <input type="hidden" name="itemID" value = "{{itemID}}"></input>
+                <input type="hidden" name="imageIDHidden{{image['ID']}}" value = "{{image['ID']}}"></input>
+                <img src="{{ url_for('static', filename='images/' + image['FileName']) }}"  value="{{image['ID']}}" class="d-block w-100" alt="...">
+            </td>
+            <td><button type="submit" name="action" value="{{image['ID']}}" class="btn btn-primary">Delete</button></td>
+        </tr>
+        {% endfor %}
+    </form>
+{% endblock %}

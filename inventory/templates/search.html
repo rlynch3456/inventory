@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+    {% block title %}
+        Inventory
+    {% endblock %}
+
+    {% block main %}
+
+    <table class="table table-hover" style="width:50%; margin-left:auto; margin-right:auto" id="myTable">
+        <thead>
+            <tr>
+                <th>Description</th><th>Location</th><th>Category</th><th>Brand</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr data-id="{{ row[0] }}">
+                <td>{{ row[1] }}</td> <td>{{ row[3] }}</td> <td>{{ row[4] }}</td>  <td>{{ row[2] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+    <script>
+        jQuery(document).ready(function() {
+            // Add click event to table rows
+            jQuery('#myTable tbody tr').click(function(event) {
+                
+                console.log('Row clicked!');
+                
+                // Prevent the default behavior of the click event (form submission)
+                event.preventDefault();
+
+                // Get the data-id attribute of the clicked row
+                var id = jQuery(this).data('id');
+
+                console.log('Clicked row with ID:', id);
+                jQuery(document).ready(function() {
+                // Send an AJAX request to the Flask route
+                jQuery.ajax({
+                    url: '/item_details?item_id=' + id,
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle the response from the server
+                        console.log('Response:', response);
+                        window.location.href = '/item_details?item_id=' + response.item.ItemID;
+
+                    },
+                    error: function(error) {
+                        console.log('Error:', error);
+                        
+                    }
+                });
+            });
+            });
+        });
+    </script>
+{% endblock %}

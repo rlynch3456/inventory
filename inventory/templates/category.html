@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+    {% block title%}
+        Categories
+    {% endblock %}
+
+    {% block main %}
+    <h2>Categories</h2>
+    <form action="/category" method="POST" >
+    <table class="table table-primary table-striped" style="width:50%; margin-left:auto; margin-right:auto">
+        {% for row in rows %}
+        <tr>
+            <td>{{ row[1] }}</td>
+            <td>
+                <input type="hidden" name="nameHidden{{row[0]}}" value = "{{row[1]}}"></input>
+                <input autocomplete="off" placeholder="Rename {{row[1]}}" type="text" id={{row[0]}} name={{row[0]}}></input>
+            </td>
+            {% if row[0] == 1 %}
+                <td></td>
+            {% else %}
+                <td><button type="submit" name='action' value="delete_{{ row[0] }}" class="btn btn-primary">Delete</button></td>
+            {% endif %}
+            <td><button type="submit" name='action' value="rename_{{ row[0] }}" class="btn btn-primary">Update</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+    </form>
+
+    <form action="/category_add" method="POST">
+        <input autocomplete="off" placeholder="New Category" name="new_name" type="text">
+        <button type="submit">Add</button>
+    </form>
+    {% endblock %}
+
