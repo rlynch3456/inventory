@@ -1,9 +1,9 @@
 # inventory.py
 
 import sqlite3
-from flask import Flask, render_template, request, jsonify, Response, session
+from flask import Flask, render_template, request, jsonify, Response, session, redirect
 from flask_session import Session
-from helpers import apology, get_date_string, usd, create_thumbnail
+from helpers import apology, get_date_string, usd, create_thumbnail, get_date_time_string
 import os
 import csv
 from io import StringIO
@@ -32,7 +32,6 @@ def download_csv(data):
         fields = {'ItemID': row_dict['ItemID'], 'Description': row_dict['Description'], 'Category': row_dict['Category'], 'Location':row_dict['Location'],'Brand':row_dict['Brand'],
                     'SerialNumber': row_dict['SerialNumber'], 'Warranty': row_dict['Warranty'], 'PurchaseDate':row_dict['PurchaseDate'],
                     'Value': row_dict['Value'], 'Accessories':row_dict['Accessories'], 'Notes':row_dict['Notes']}
-        print(f'fields: {fields}')
 
         csv_writer.writerow(fields)
 
@@ -44,7 +43,7 @@ def download_csv(data):
     )
 
     # create a unique filename for the csv
-    name = get_date_string()
+    name = get_date_time_string()
     # Set the file name for the download
     response.headers['Content-Disposition'] = f'attachment; filename=data_{name}.csv'
 
@@ -120,10 +119,29 @@ def get_item_images(itemID):
     return rows
 
 def get_db():
-
-    db = sqlite3.connect("inventory.db", check_same_thread=False)
+    file_name = 'inventory_' + str(session['userID']) + '.db'
+    db = sqlite3.connect(file_name, check_same_thread=False)
     db.row_factory = sqlite3.Row
     return db
+
+def create_db(UserID):
+
+    # This will create an empty database with default Location, Category, and Brand
+
+    file_name = 'inventory_' + str(UserID) + '.db'
+    db = sqlite3.connect(file_name, check_same_thread=False)
+    db.row_factory = sqlite3.Row
+
+    try:
+        with open('inventory.db.sql', 'r') as sql_file:
+            sql_script = sql_file.read()
+            cursor = db.cursor()
+            cursor.executescript(sql_script)
+            db.commit()
+            db.close()
+    except Exception as e:
+        return False
+    
 
 def get_category_list():
 
@@ -260,19 +278,35 @@ def inventory():
 
 
 
-    db = get_db()
+        db = get_db()
 
-    command = ("SELECT ItemID, Description, Brand, Location, Category FROM ItemDetails "
-                "JOIN BrandList ON ItemDetails.BrandID = BrandList.BrandID "
-                "JOIN CategoryList ON ItemDetails.CategoryID = CategoryList.CategoryID "
-                "JOIN LocationList ON ItemDetails.LocationID = LocationList.LocationID "
-                f"{where_clause} "
-    )
-    cursor = db.execute(command)
-    rows = cursor.fetchall()
-    db.close()
+        command = ("SELECT ItemID, Description, Brand, Location, Category FROM ItemDetails "
+                    "JOIN BrandList ON ItemDetails.BrandID = BrandList.BrandID "
+                    "JOIN CategoryList ON ItemDetails.CategoryID = CategoryList.CategoryID "
+                    "JOIN LocationList ON ItemDetails.LocationID = LocationList.LocationID "
+                    f"{where_clause} "
+        )
+        cursor = db.execute(command)
+        rows = cursor.fetchall()
+        db.close()
 
-    return render_template("inventory.html", rows=rows, locations=locations, categories=categories, brands=brands, location_selection=int(location), category_selection=int(category), brand_selection=int(brand))
+        return render_template("inventory.html", rows=rows, locations=locations, categories=categories, brands=brands, location_selection=int(location), category_selection=int(category), brand_selection=int(brand))
+
+
+    else:
+        db = get_db()
+
+        command = ("SELECT ItemID, Description, Brand, Location, Category FROM ItemDetails "
+                    "JOIN BrandList ON ItemDetails.BrandID = BrandList.BrandID "
+                    "JOIN CategoryList ON ItemDetails.CategoryID = CategoryList.CategoryID "
+                    "JOIN LocationList ON ItemDetails.LocationID = LocationList.LocationID "
+        )
+        cursor = db.execute(command)
+        rows = cursor.fetchall()
+        db.close()
+
+        return render_template("inventory.html", rows=rows, locations=locations, categories=categories, brands=brands, location_selection=int(location), category_selection=int(category), brand_selection=int(brand))
+
 
 @app.route("/search", methods=['GET', 'POST'])
 def search():
@@ -706,4 +740,76 @@ def upload():
         db.commit()
         db.close()
         return images(itemID)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    session.clear()
+    if request.method == 'POST':
+        # get the username
+        username = request.form.get('username')
+
+        # see if the user is registered
+
+        # get the users database
+        db = sqlite3.connect("users.db", check_same_thread=False)
+        db.row_factory = sqlite3.Row
+
+        cursor = db.execute('SELECT * FROM Users WHERE Username=?', (username,))
+        rows = cursor.fetchall()
+
+        # Is this user registered?
+        if len(rows) == 0:
+            return render_template('apology.html', message=f'{username} is a not registered user')
+        else:
+            session['userID'] = rows[0]['ID']
+
+        return redirect('/')
+    else:
+        return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+
+        # get the users database
+        db = sqlite3.connect("users.db", check_same_thread=False)
+        db.row_factory = sqlite3.Row
+
+        # check to see if this name is already taken
+        command = f"SELECT * FROM Users WHERE Username ='?'"
+
+        cursor = db.execute('SELECT * FROM Users WHERE Username=?', (username,))
+
+        rows = cursor.fetchall()
+
+        if len(rows) != 0:
+            return render_template('apology.html', message=f'Sorry, but the username {username} has already been used')
+        else:
+            # looks good, create a new user
+            command = f'INSERT INTO Users (Username) VALUES(?)'
+            cursor.execute(command, (username,))
+            db.commit()
+
+            # now get the UserID of the new user
+            command = 'SELECT * FROM Users ORDER BY ID DESC LIMIT 1'
+            cursor.execute(command)
+            row = cursor.fetchone()
+            UserID = row['ID']
+            db.close()
+
+            create_db(UserID)
+            session['UserName'] = username
+            return render_template('login.html', message=f"{username}, you have registered, please log in")
+    else:
+        return render_template('register.html')
+
+
 

@@ -24,7 +24,12 @@ def get_date_string():
     """Format current date string"""
     today = datetime.datetime.now()
 
-    return f"{today.strftime('%Y-%m-%d')}"  
+    return f"{today.strftime('%Y-%m-%d')}"
+
+def get_date_time_string():
+    now = datetime.datetime.now()
+
+    return f"{now.strftime('%Y%m%d%H%M%S')}"
     
 def usd(value):
     """Format value as USD."""

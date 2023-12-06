@@ -37,8 +37,8 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
-
-                        <ul class="navbar-nav me-auto ">
+                    {% if session['userID'] %}
+                        <ul class="navbar-nav me-auto">
                             <li class="nav-item"><a class="nav-link" href="/inventory">Inventory</a></li>
                             <li class="nav-item"><a class="nav-link" href="/add_item">Add</a></li>
                             <li class="nav-item"><a class="nav-link" href="/category">Categories</a></li>
@@ -60,6 +60,16 @@
                                 <input class="form-control me-2" autocomplete="off" placeholder="Search" type="text" id="search" name="search">         
                             </form>
                         </ul>
+
+                            <ul class="navbar-nav ms-auto mt-2">
+                                <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
+                            </ul>
+                        {% else %}
+                            <ul class="navbar-nav ms-auto mt-2">
+                                <li class="nav-item"><a class="nav-link" href="/register">Register</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/login">Log In</a></li>
+                            </ul>
+                        {% endif %}   
                 </div>
             </div>
 
