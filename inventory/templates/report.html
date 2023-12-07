@@ -14,7 +14,7 @@
                         {% if groupd != 'location' %}<td>{{ item['Location'] }}</td>{% endif %}
                         {% if group != 'category' %}<td>{{ item['Category'] }}</td>{% endif %}
                         {% if group != 'brand' %}<td>{{ item['Brand'] }}</td>{% endif %}
-                        {% if item['Value'] != None %}
+                        {% if item['Value'] != '' %}
                             <td>${{ item['Value']}}</td>
                         {% else %}
                             <td></td>

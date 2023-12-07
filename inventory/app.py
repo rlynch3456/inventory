@@ -510,6 +510,28 @@ def delete_item(itemID):
     db = get_db()
     db.execute("DELETE FROM ItemDetails WHERE ItemID=?", (itemID,))
     db.commit()
+
+    # Let's see if there are any images associated with this item.
+    images = get_item_images(itemID)
+
+    for image in images:
+        try:
+            os.remove(f"static/images/{image['FileName']}")
+        except OSError as e:
+            print(f'Error: {e.filename} - {e.strerror}')
+
+    for image in images:
+        try:
+            os.remove(f"static/images/{image['ThumbnailName']}")
+        except OSError as e:
+            print(f'Error: {e.filename} - {e.strerror}')
+
+    # now delete from the database
+    command = f"DELETE from ImageList WHERE ItemID = {itemID}"
+    db.commit()
+    cursor = db.execute(command)
+    print(f'{cursor.rowcount} images deleted')
+
     db.close()
 
     return 'ItemID: ' + str({itemID}) + 'deleted successfully'  
@@ -534,9 +556,22 @@ def update_item():
     itemID = request.form.get('ItemIDHidden')
     description = request.form.get('description')
     notes = request.form.get('notes')
-    category = request.form.get('category')
-    location = request.form.get('location')
-    brand = request.form.get('brand')
+    # We need to assign the default category, location, and brand if user did not select anything
+    category = str(request.form.get('category'))
+    try:
+        int(category)
+    except:
+        category = '1'
+    location = str(request.form.get('location'))
+    try:
+        int(location)
+    except:
+        location = '1'
+    brand = str(request.form.get('brand'))
+    try:
+        int(brand)
+    except:
+        brand = '1'
     serialNumber = request.form.get('serialNumber')
     accessories = request.form.get('accessories')
     purchase_date = request.form.get('purchase_date')
@@ -568,9 +603,22 @@ def add_item():
 
         description = request.form.get('description')
         notes = request.form.get('notes')
+        # We need to assign the default category, location, and brand if user did not select anything
         category = str(request.form.get('category'))
+        try:
+            int(category)
+        except:
+            category = '1'
         location = str(request.form.get('location'))
+        try:
+            int(location)
+        except:
+            location = '1'
         brand = str(request.form.get('brand'))
+        try:
+            int(brand)
+        except:
+            brand = '1'
         serialNumber = request.form.get('serialNumber')
         accessories = request.form.get('accessories')
         purchase_date = request.form.get('purchase_date')
