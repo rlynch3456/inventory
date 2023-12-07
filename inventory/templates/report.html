@@ -11,7 +11,7 @@
                 {% for item in entry.itemlist %}
                     <tr>
                         <td>{{ item['Description'] }}</td>
-                        {% if groupd != 'location' %}<td>{{ item['Location'] }}</td>{% endif %}
+                        {% if group != 'location' %}<td>{{ item['Location'] }}</td>{% endif %}
                         {% if group != 'category' %}<td>{{ item['Category'] }}</td>{% endif %}
                         {% if group != 'brand' %}<td>{{ item['Brand'] }}</td>{% endif %}
                         {% if item['Value'] != '' %}

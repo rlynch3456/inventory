@@ -627,9 +627,9 @@ def add_item():
         today = get_date_string()
 
         db = get_db()
-        data_to_insert = (description, notes, category, location, brand, serialNumber, accessories, today, today, value, warranty)
-        command = ("INSERT INTO ItemDetails (Description, Notes, CategoryID, LocationID, BrandID, serialNumber, Accessories, CreatedDate, ModifiedDate, Value, Warranty)"
-                   "VALUES (?,?,?,?,?,?,?,?,?,?,?)"                   
+        data_to_insert = (description, notes, category, location, brand, serialNumber, accessories, today, today, value, warranty, purchase_date)
+        command = ("INSERT INTO ItemDetails (Description, Notes, CategoryID, LocationID, BrandID, serialNumber, Accessories, CreatedDate, ModifiedDate, Value, Warranty, PurchaseDate)"
+                   "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
         )
         cursor = db.cursor()
         cursor.execute(command, data_to_insert)
