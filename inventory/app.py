@@ -1,13 +1,14 @@
 # inventory.py
 
 import sqlite3
-from flask import Flask, render_template, request, jsonify, Response, session, redirect
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
 from flask_session import Session
-from helpers import apology, get_date_string, usd, create_thumbnail, get_date_time_string
+from helpers import apology, get_date_string, usd, create_thumbnail, get_date_time_string, get_colors
 import os
 import csv
 from io import StringIO
-
+import logging
+from icecream import ic
 
 app = Flask(__name__)
 
@@ -15,6 +16,16 @@ app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+# Let's create some logging
+logger = logging.getLogger('my_logger')
+logger.setLevel(logging.DEBUG)
+# For Info (we will use this to log user logins, logouts, and creations)
+info_handler = logging.FileHandler('info.log')
+info_handler.setLevel(logging.INFO)
+info_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+info_handler.setFormatter(info_formatter)
+logger.addHandler(info_handler)
 
 @app.route('/download_csv')
 def download_csv(data):
@@ -471,38 +482,30 @@ def location():
 @app.route("/", methods=["GET", "POST"])
 def index():
 
+    # Let's get some stats for the homepage
+    db = get_db()
 
-    #rows = get_category_list()
-    
-    # try to get a single Category
-    #db = get_db()
-    #command = "select * FROM CategoryList WHERE Category LIKE '%elect%'"
-    #cursor = db.execute(command)
-    #row = cursor.fetchone()
-    #CategoryID = row['CategoryID']
+    command = (
+        'select LocationList.Location, count(ItemDetails.LocationID)  from ItemDetails '
+        'join LocationList on ItemDetails.LocationID=LocationList.LocationID '
+        'group by ItemDetails.LocationID  order by LocationList.Location'
+    )
 
-    #command = "select * FROM LocationList WHERE Location LIKE '%living%'"
-    #cursor = db.execute(command)
-    #row = cursor.fetchone()
-    #LocationID = row['LocationID']
+    cursor = db.execute(command)
+    locations = cursor.fetchall()
 
-    #command = "select * FROM BrandList WHERE Brand LIKE '%apple%'"
-    #cursor = db.execute(command)
-    #row = cursor.fetchone()
-    #BrandID = row['BrandID']
+    command = (
+        'SELECT CategoryList.Category, count(ItemDetails.CategoryID) FROM ItemDetails '
+        'JOIN CategoryList on ItemDetails.CategoryID = CategoryList.CategoryID '
+        'GROUP BY ItemDetails.CategoryID ORDER BY CategoryList.Category'
+    )
 
-    #print(f"Category: {CategoryID}")
-    #print(f"Location: {LocationID}")
-    #print(f"Brand: {BrandID}")
+    cursor = db.execute(command)
+    categories = cursor.fetchall()
 
-    #data_to_insert = ('iPad Pro', LocationID, CategoryID, BrandID)
-    #db.execute("INSERT INTO ItemDetails (Description, LocationID, CategoryID, BrandID) values (?,?,?,?)", \
-    #           data_to_insert)
-    #db.commit()
+    db.close()
 
-    #db.close()
-    return render_template("apology.html", message="Got here, nothing much to see yet.")
-    return render_template("index.html", message="Hello World, how fitting!", rows=rows, key='Category')
+    return render_template("index.html", locations=locations, categories=categories)
 
 @app.route("/delete_item/<int:itemID>", methods = ["POST"])
 def delete_item(itemID):
@@ -534,7 +537,9 @@ def delete_item(itemID):
 
     db.close()
 
-    return 'ItemID: ' + str({itemID}) + 'deleted successfully'  
+    result = redirect(url_for('index'))
+
+    return result
 
 
 @app.route("/delete_confirm/<int:itemID>", methods=["POST"])
@@ -558,6 +563,8 @@ def update_item():
     notes = request.form.get('notes')
     # We need to assign the default category, location, and brand if user did not select anything
     category = str(request.form.get('category'))
+
+    # If the user did not select a category from the dropdown, we will not be able to convert to an int
     try:
         int(category)
     except:
@@ -572,6 +579,7 @@ def update_item():
         int(brand)
     except:
         brand = '1'
+
     serialNumber = request.form.get('serialNumber')
     accessories = request.form.get('accessories')
     purchase_date = request.form.get('purchase_date')
@@ -579,19 +587,21 @@ def update_item():
     value = request.form.get('worth')
     warranty = request.form.get('warranty')
 
-    db = get_db()
-    data_to_update = (description, notes, category, location, brand, serialNumber, accessories, purchase_date, today, today, value, warranty, itemID)
-    command = (
-        "UPDATE ItemDetails SET Description=?, Notes=?, CategoryID=?, LocationID=?, BrandID=?, serialNumber=?, Accessories=?, PurchaseDate=?, CreatedDate=?, ModifiedDate=?, Value=?, Warranty=? "
-        "WHERE ItemID=?"
-    )
-    cursor = db.cursor()
-    cursor.execute(command, data_to_update)
-    db.commit()
-    cursor.close()
-    db.close()
-    msg = f"{description} has been updated"
-    return render_template('apology.html', message=msg)  
+    if request.method == 'POST':
+
+        db = get_db()
+        data_to_update = (description, notes, category, location, brand, serialNumber, accessories, purchase_date, today, today, value, warranty, itemID)
+        command = (
+            "UPDATE ItemDetails SET Description=?, Notes=?, CategoryID=?, LocationID=?, BrandID=?, serialNumber=?, Accessories=?, PurchaseDate=?, CreatedDate=?, ModifiedDate=?, Value=?, Warranty=? "
+            "WHERE ItemID=?"
+        )
+        cursor = db.cursor()
+        cursor.execute(command, data_to_update)
+        db.commit()
+        cursor.close()
+        db.close()
+
+    return redirect(url_for('item_details', item_id=itemID))
 
 
 # Add a new item
@@ -634,8 +644,13 @@ def add_item():
         cursor = db.cursor()
         cursor.execute(command, data_to_insert)
         db.commit()
+
+        # now let's get the item number of the row that we just added
+        command = 'SELECT ItemID FROM ItemDetails ORDER BY ItemID DESC LIMIT 1'
+        cursor=db.execute(command)
+        row = cursor.fetchone()
         db.close()
-        return render_template("apology.html", message=f"{description} added")
+        return redirect(url_for('item_details',item_id=row[0]))
 
     else:
         # fill out a new item with some default values
@@ -789,6 +804,27 @@ def upload():
         db.close()
         return images(itemID)
 
+@app.route('/users', methods=['GET', 'POST'])
+def users():
+
+    # get the users database
+    db = sqlite3.connect("users.db", check_same_thread=False)
+    db.row_factory = sqlite3.Row
+
+    # check to see if this name is already taken
+    command = f"SELECT * FROM Users"
+
+    cursor = db.execute(command)
+
+    rows = cursor.fetchall()
+
+    if request.method == 'POST':
+
+        return render_template('users.html', users=rows)
+
+    else:
+        return render_template('users.html', users=rows)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 
@@ -811,6 +847,10 @@ def login():
             return render_template('apology.html', message=f'{username} is a not registered user')
         else:
             session['userID'] = rows[0]['ID']
+            session['username'] = username
+            if rows[0]['isAdmin'] == 1:
+                session['userRole'] = 'admin'
+            logger.info(f'User: {session["username"]}: UserID: {session["userID"]} logged in.')
 
         return redirect('/')
     else:
@@ -818,6 +858,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    logger.info(f'User: {session["username"]}: UserID: {session["userID"]} logged out.')
     session.clear()
     return redirect('/')
 
@@ -855,6 +896,7 @@ def register():
 
             create_db(UserID)
             session['UserName'] = username
+            logger.info(f'User: {username} created with ID: {UserID}')
             return render_template('login.html', message=f"{username}, you have registered, please log in")
     else:
         return render_template('register.html')

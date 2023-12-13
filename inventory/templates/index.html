@@ -4,16 +4,31 @@
     {% endblock %}
 
     {% block main %}
-        
-    <table class="table table-primary table-striped" style="width:50%; margin-left:auto; margin-right:auto">
+    
+    <table class="table text-start" style="width:50%; margin-left:auto; margin-right:auto">
+    <tr>
+        <th>Category</th><th>Items</th>
+    </tr>
+        {% for category in categories %}
+            <tr>
+                <td>{{ category[0]}}</td>
+                <td>{{ category[1]}}</td>
+            </tr>
+        {% endfor %}
+    <tr>
+        <th></th><th></th>
+    </tr>
         <tr>
-            <th>Search = {{search}}</th>
+            <th>Location</th><th></th>
         </tr>
-        {% for row in rows %}
-        <tr>
-            <td>{{ row[0] }}: {{ row[1]}}</td>
-        </tr>
+
+        {% for location in locations %}
+            <tr>
+                <td>{{ location[0]}}</td>
+                <td>{{ location[1]}}</td>
+            </tr>
         {% endfor %}
     </table>
+
     {% endblock %}
 
